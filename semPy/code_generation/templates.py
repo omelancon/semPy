@@ -5,9 +5,27 @@
 # ======================================================================================================================
 
 semantics_template = \
-    """from __compiler_intrinsics__ import define_semantics, class_getattr, py_bool_to_host_bool, absent
+    """from __compiler_intrinsics__ import define_semantics, class_getattr, py_bool_to_host_bool, absent, sint, bint
 
 {arithmetic}
+
+@define_semantics
+def raise_binary_TypeError(op, x, y):
+    raise TypeError("'"
+                    + op
+                    + "' not supported between instances of '"
+                    + class_getattr(x, "__name__")
+                    + "' and '"
+                    + class_getattr(y, "__name__")
+                    + "'")
+
+@define_semantics
+def raise_unary_TypeError(op, x):
+    raise TypeError("bad operand type for unary "
+                    + op
+                    + ":'"
+                    + class_getattr(x, "__name__")
+                    + "'")
 
 @define_semantics
 def maybe_trunc(obj):
@@ -20,13 +38,13 @@ def maybe_trunc(obj):
         if type(result) is int:
             return result
         else:
-            raise TypeError("__trunc__ returned non-int type: '" + type(obj).__name__ + "'")
+            raise TypeError("__trunc__ returned non-int type: '" + class_getattr(obj, "__name__") + "'")
 
 @define_semantics
 def trunc(obj):
     result = maybe_trunc(obj)
     if result is absent:
-        raise TypeError("type '" + type(obj).__name__ + "' doesn't define __trunc__ method")
+        raise TypeError("type '" + class_getattr(obj, "__name__") + "' doesn't define __trunc__ method")
     else:
         return result
 
@@ -41,13 +59,13 @@ def maybe_to_int(obj):
         if type(result) is int:
             return result
         else:
-            raise TypeError("__int__ returned non-int type: '" + type(obj).__name__ + "'")
+            raise TypeError("__int__ returned non-int type: '" + class_getattr(obj, "__name__") + "'")
 
 @define_semantics
 def to_int(obj):
     result = maybe_to_int(obj)
     if result is absent:
-        raise TypeError("'" + type(obj).__name__ + "' object cannot be interpreted as an integer")
+        raise TypeError("'" + class_getattr(obj, "__name__") + "' object cannot be interpreted as an integer")
     else:
         return result
 
@@ -62,13 +80,13 @@ def maybe_to_float(obj):
         if isinstance(result, float):
             return result
         else:
-            raise TypeError("__float__ returned non-float type: '" + type(obj).__name__ + "'")
+            raise TypeError("__float__ returned non-float type: '" + class_getattr(obj, "__name__") + "'")
 
 @define_semantics
 def to_float(obj):
     result = maybe_to_float(obj)
     if result is absent:
-        raise TypeError("'" + type(obj).__name__ + "' object cannot be interpreted as a float")
+        raise TypeError("'" + class_getattr(obj, "__name__") + "' object cannot be interpreted as a float")
     else:
         return result
 
@@ -87,13 +105,13 @@ def maybe_index(obj):
         elif isinstance(result, bint):
             raise OverflowError("cannot fit 'int' into an index-sized integer")
         else:
-            raise TypeError("__index__ returned non-int type: '" + type(obj).__name__ + "'")
+            raise TypeError("__index__ returned non-int type: '" + class_getattr(obj, "__name__") + "'")
 
 @define_semantics
 def index(obj):
     result = maybe_index(obj)
     if result is absent:
-        raise TypeError("'" + type(obj).__name__ + "' object cannot be interpreted as an integer")
+        raise TypeError("'" + class_getattr(obj, "__name__") + "' object cannot be interpreted as an integer")
     else:
         return result
 
@@ -110,13 +128,13 @@ def maybe_big_index(obj):
         elif type(result) is int:
             return result
         else:
-            raise TypeError("__index__ returned non-int type: '" + type(obj).__name__ + "'")
+            raise TypeError("__index__ returned non-int type: '" + class_getattr(obj, "__name__") + "'")
 
 @define_semantics
 def big_index(obj):
     result = maybe_big_index(obj)
     if result is absent:
-        raise TypeError("'" + type(obj).__name__ + "' object cannot be interpreted as an integer")
+        raise TypeError("'" + class_getattr(obj, "__name__") + "' object cannot be interpreted as an integer")
     else:
         return result
 
@@ -137,7 +155,7 @@ def maybe_length(obj):
 def length(obj):
     result = maybe_length(obj)
     if result is absent:
-        raise TypeError("object of type" + type(obj).__name__ + "has no len()")
+        raise TypeError("object of type" + class_getattr(obj, "__name__") + "has no len()")
     else:
         return result
 
@@ -149,7 +167,7 @@ def truth(obj):
         if type(result) is bool:
             return result
         else:
-            raise TypeError("__bool__ should return bool, returned '" + type(obj).__name__ + "'")
+            raise TypeError("__bool__ should return bool, returned '" + class_getattr(obj, "__name__") + "'")
     else:
         len_result = maybe_length(obj)
         if len_result is not absent:
@@ -251,16 +269,13 @@ def {op}(x, y):
     def reflected():
         magic_method = class_getattr(y, "__r{magic_method}__")
         if magic_method is absent:
-            return err()
+            return raise_binary_TypeError("{symbol}", x, y)
         else:
             result = magic_method(y, x)
             if result is NotImplemented:
-                return err()
+                return raise_binary_TypeError("{symbol}", x, y)
             else:
                 return result
-
-    def err():
-        raise TypeError("unsupported operand type(s) for {symbol}: '" + type(x).__name__ + "' and '" + type(y).__name__ + "'")
 
     return normal()"""
 
@@ -308,16 +323,13 @@ def i{op}(x, y):
     def reflected():
         magic_method = class_getattr(y, "__r{magic_method}__")
         if magic_method is absent:
-            return err()
+            return raise_binary_TypeError("{symbol}", x, y)
         else:
             result = magic_method(y, x)
             if result is NotImplemented:
-                return err()
+                return raise_binary_TypeError("{symbol}", x, y)
             else:
                 return result
-
-    def err():
-        raise TypeError("unsupported operand type(s) for {symbol}: '" + type(x).__name__ + "' and '" + type(y).__name__ + "'")
 
     return inplace()"""
 
@@ -343,12 +355,9 @@ def {op}(x):
     def normal():
         magic_method = class_getattr(x, "__{magic_method}__")
         if magic_method is absent:
-            return err()
+            return raise_unary_TypeError("{symbol}", x)
         else:
             return magic_method(x)
-
-    def err():
-        raise TypeError("bad operand type for unary {symbol}: '" + type(x).__name__ + "'")
 
     return normal()"""
 
@@ -376,16 +385,13 @@ def {op}(x, y):
     def reflected():
         magic_method = class_getattr(y, "__{reflected_magic_method}__")
         if magic_method is absent:
-            return err()
+            return raise_binary_TypeError("{symbol}", x, y)
         else:
             result = magic_method(y, x)
             if result is NotImplemented:
-                return err()
+                return raise_binary_TypeError("{symbol}", x, y)
             else:
                 return result
-
-    def err():
-        raise TypeError("'{symbol}' not supported between instances of '" + type(x).__name__ + "' and '" + type(y).__name__ + "'")
 
     return normal()"""
 
@@ -446,7 +452,7 @@ int_binary_method_template = \
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__{method_name}__' requires a 'int' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__{method_name}__' requires a 'int' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 int_reflected_binary_method_template = \
@@ -458,7 +464,7 @@ int_reflected_binary_method_template = \
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__r{method_name}__' requires a 'int' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__r{method_name}__' requires a 'int' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 int_inplace_binary_method_template = \
@@ -470,7 +476,7 @@ int_inplace_binary_method_template = \
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__i{method_name}__' requires a 'int' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__i{method_name}__' requires a 'int' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 int_shift_method_template = \
@@ -485,7 +491,7 @@ int_shift_method_template = \
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__{method_name}__' requires a 'int' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__{method_name}__' requires a 'int' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 int_reflected_shift_method_template = \
@@ -500,7 +506,7 @@ int_reflected_shift_method_template = \
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__r{method_name}__' requires a 'int' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__r{method_name}__' requires a 'int' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 int_inplace_shift_method_template = \
@@ -515,7 +521,7 @@ int_inplace_shift_method_template = \
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__i{method_name}__' requires a 'int' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__i{method_name}__' requires a 'int' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 int_division_method_template = \
@@ -530,7 +536,7 @@ int_division_method_template = \
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__{method_name}__' requires a 'int' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__{method_name}__' requires a 'int' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 int_reflected_division_method_template = \
@@ -545,7 +551,7 @@ int_reflected_division_method_template = \
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__r{method_name}__' requires a 'int' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__r{method_name}__' requires a 'int' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 int_inplace_division_method_template = \
@@ -560,7 +566,7 @@ int_inplace_division_method_template = \
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__i{method_name}__' requires a 'int' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__i{method_name}__' requires a 'int' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 int_comparison_method_template = \
@@ -572,7 +578,7 @@ int_comparison_method_template = \
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__{method_name}__' requires a 'int' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__{method_name}__' requires a 'int' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 int_unary_method_template = \
@@ -581,7 +587,7 @@ int_unary_method_template = \
         if isinstance(self, int):
             return {expr}
         else:
-            raise TypeError("descriptor '__{method_name}__' requires a 'int' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__{method_name}__' requires a 'int' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 class_int_template = \
@@ -595,7 +601,7 @@ def convert_to_int(obj):
         if index_conversion is absent:
             trunc_conversion = semantics_maybe_trunc(obj)
             if trunc_conversion is absent:
-                raise TypeError("int() argument must be a string, a bytes-like object or a number, not '" + type(obj).__name__ + "'")
+                raise TypeError("int() argument must be a string, a bytes-like object or a number, not '" + class_getattr(obj, "__name__") + "'")
             else:
                 return trunc_conversion
         else:
@@ -621,24 +627,30 @@ class int:
 
     def __bool__(self):
         if isinstance(self, int):
-            return self != 0
+            return py_bool_from_host_bool(py_int_to_host(0) != py_int_to_host(self))
         else:
-            raise TypeError("descriptor '__bool__' requires a 'int' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__bool__' requires a 'int' object but received a '" + class_getattr(self, "__name__") + "'")
+    
+    def __float__(self):
+        if isinstance(self, int):
+            return py_int_to_float(self)
+        else:
+            raise TypeError("descriptor '__float__' requires a 'int' object but received a '" + class_getattr(self, "__name__") + "'")
 
     def __index__(self):
         if isinstance(self, int):
             return py_int_from_host(py_int_to_host(self))
         else:
-            raise TypeError("descriptor '__index__' requires a 'int' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__index__' requires a 'int' object but received a '" + class_getattr(self, "__name__") + "'")
 
     def __abs__(self):
         if isinstance(self, int):
-            if self < 0:
+            if py_int_to_host(self) < py_int_to_host(0):
                 return py_int_from_host(-py_int_to_host(self))
             else:
                 return py_int_from_host(py_int_to_host(self))
         else:
-            raise TypeError("descriptor '__abs__' requires a 'int' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__abs__' requires a 'int' object but received a '" + class_getattr(self, "__name__") + "'")
 {methods}"""
 
 int_method_info = {
@@ -694,7 +706,7 @@ bool_binary_method_template = \
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__{method_name}__' requires a 'bool' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__{method_name}__' requires a 'bool' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 bool_reflected_binary_method_template = \
@@ -708,7 +720,7 @@ bool_reflected_binary_method_template = \
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__r{method_name}__' requires a 'bool' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__r{method_name}__' requires a 'bool' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 class_bool_template = \
@@ -729,7 +741,7 @@ class bool(int):
         elif self is False:
             return "False"
         else:
-            raise TypeError("descriptor '__repr__' requires a 'bool' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__repr__' requires a 'bool' object but received a '" + class_getattr(self, "__name__") + "'")
 {methods}"""
 
 bool_method_info = {
@@ -761,7 +773,7 @@ float_binary_method_template = \
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__{method_name}__' requires a 'float' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__{method_name}__' requires a 'float' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 float_reflected_binary_method_template = \
@@ -775,7 +787,7 @@ float_reflected_binary_method_template = \
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__r{method_name}__' requires a 'float' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__r{method_name}__' requires a 'float' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 float_inplace_binary_method_template = \
@@ -789,7 +801,7 @@ float_inplace_binary_method_template = \
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__i{method_name}__' requires a 'float' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__i{method_name}__' requires a 'float' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 float_division_method_template = \
@@ -809,7 +821,7 @@ float_division_method_template = \
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__{method_name}__' requires a 'float' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__{method_name}__' requires a 'float' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 float_reflected_division_method_template = \
@@ -829,7 +841,7 @@ float_reflected_division_method_template = \
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__r{method_name}__' requires a 'float' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__r{method_name}__' requires a 'float' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 float_inplace_division_method_template = \
@@ -849,7 +861,7 @@ float_inplace_division_method_template = \
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__i{method_name}__' requires a 'float' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__i{method_name}__' requires a 'float' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 float_comparison_method_template = \
@@ -863,7 +875,7 @@ float_comparison_method_template = \
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__{method_name}__' requires a 'float' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__{method_name}__' requires a 'float' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 float_unary_method_template = \
@@ -872,7 +884,7 @@ float_unary_method_template = \
         if isinstance(self, float):
             return {expr}
         else:
-            raise TypeError("descriptor '__{method_name}__' requires a 'float' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__{method_name}__' requires a 'float' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 class_float_template = \
@@ -885,7 +897,7 @@ def convert_to_float(obj):
         if isinstance(obj, str):
             return str_to_float(obj)
         else:
-            raise TypeError("float() argument must be a string or a number, not '" + type(obj).__name__ + "'")
+            raise TypeError("float() argument must be a string or a number, not '" + class_getattr(obj, "__name__") + "'")
     else:
         return float_conversion
 
@@ -1097,13 +1109,13 @@ class float:
         if isinstance(self, float):
             return py_float_from_host(py_float_to_host(self))
         else:
-            raise TypeError("descriptor '__float__' requires a 'float' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__float__' requires a 'float' object but received a '" + class_getattr(self, "__name__") + "'")
 
     def __bool__(self):
         if isinstance(self, float):
-            return self != 0.0
+            return py_bool_from_host_bool(py_float_to_host(0.0) != py_float_to_host(self))
         else:
-            raise TypeError("descriptor '__bool__' requires a 'float' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__bool__' requires a 'float' object but received a '" + class_getattr(self, "__name__") + "'")
 {methods}"""
 
 float_method_info = {
@@ -1147,7 +1159,7 @@ str_comparison_method_template = \
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__{method_name}__' requires a 'str' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__{method_name}__' requires a 'str' object but received a '" + class_getattr(self, "__name__") + "'")
 """
 
 
@@ -1168,7 +1180,7 @@ class str:
         if isinstance(self, str):
             return py_int_from_host(py_str_len_to_host(self))
         else:
-            raise TypeError("descriptor '__len__' requires a 'str' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__len__' requires a 'str' object but received a '" + class_getattr(self, "__name__") + "'")
 
     def __add__(self, other):
         if isinstance(self, str):
@@ -1177,7 +1189,7 @@ class str:
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__add__' requires a 'str' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__add__' requires a 'str' object but received a '" + class_getattr(self, "__name__") + "'")
 
     def __mul__(self, other):
         if isinstance(self, str):
@@ -1186,7 +1198,7 @@ class str:
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__mul__' requires a 'str' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__mul__' requires a 'str' object but received a '" + class_getattr(self, "__name__") + "'")
 
     def __rmul__(self, other):
         if isinstance(self, str):
@@ -1195,7 +1207,7 @@ class str:
             else:
                 return NotImplemented
         else:
-            raise TypeError("descriptor '__rmul__' requires a 'str' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__rmul__' requires a 'str' object but received a '" + class_getattr(self, "__name__") + "'")
 
     def __mod__(self, values):
         mapping = None
@@ -1322,7 +1334,7 @@ class str:
 
 
 builtins_template = """\
-from __compiler_intrinsics__ import absent, builtin, private, alloc, py_int_from_host, py_int_to_host, py_float_from_host, py_float_to_host, py_bool_from_host_bool, py_bool_to_host_bool, py_str_to_host, py_str_from_host, py_str_len_to_host, semantics_truth, semantics_maybe_to_int, semantics_maybe_to_float, semantics_maybe_index, semantics_maybe_trunc, semantics_big_index
+from __compiler_intrinsics__ import absent, builtin, class_getattr, private, sint, bint, alloc, py_int_to_float, py_int_from_host, py_int_to_host, py_float_from_host, py_float_to_host, py_bool_from_host_bool, py_bool_to_host_bool, py_str_to_host, py_str_from_host, py_str_len_to_host, semantics_truth, semantics_maybe_to_int, semantics_maybe_to_float, semantics_maybe_index, semantics_maybe_trunc, semantics_big_index
 
 
 @builtin
@@ -1339,7 +1351,7 @@ class staticmethod:
         if isinstance(self, staticmethod):
             return self.method
         else:
-            raise TypeError("descriptor '__get__' requires a 'staticmethod' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__get__' requires a 'staticmethod' object but received a '" + class_getattr(self, "__name__") + "'")
 
 
 @private
@@ -1388,7 +1400,7 @@ class classmethod:
             else:
                 return alloc(method, method=self.method, self=owner)
         else:
-            raise TypeError("descriptor '__get__' requires a 'classmethod' object but received a '" + type(self).__name__ + "'")
+            raise TypeError("descriptor '__get__' requires a 'classmethod' object but received a '" + class_getattr(self, "__name__") + "'")
 
 {definitions}
 
@@ -1619,17 +1631,17 @@ class NameError(Exception):
 
 
 @builtin
-class EnvironmentError(Exception):
-    pass
-
-
-@builtin
-class IOError(Exception):
-    pass
-
-
-@builtin
 class OSError(Exception):
+    pass
+    
+
+@builtin
+class IOError(OSError):
+    pass
+    
+    
+@builtin
+class EnvironmentError(OSError):
     pass
 
 

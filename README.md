@@ -4,4 +4,4 @@ A guide toward analysing and expressing Python semantics in a syntax reusable by
 
 # Usage
 
-Semantics files are pre-generated in the `out` folder. To regenerate them simply use `make`.
+Semantics files are pre-generated in the `out` folder. To regenerate them use `make clean; make`.

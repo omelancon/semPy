@@ -1,0 +1,1 @@
+add_specializations("float", types=[("sint", "bint", "bool", "float")], prefix="py_call_float")

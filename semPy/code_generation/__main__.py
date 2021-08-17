@@ -1,4 +1,4 @@
-import argparse, sys
+import argparse
 
 from . import templates
 
@@ -134,15 +134,15 @@ if __name__ == '__main__':
 
     # builtins command
     builtins_parser = subparser.add_parser('builtins', description="Initialize a builtins.py file from templates")
-    builtins_parser.add_argument('-path', default=None)
+    builtins_parser.add_argument('-o', default=None)
 
     # semantics command
     semantics_parser = subparser.add_parser('semantics', description="Initialize a semantics.py file from templates")
-    semantics_parser.add_argument('-path', default=None)
+    semantics_parser.add_argument('-o', default=None)
 
     args = parser.parse_args()
     command = args.command
-    path = args.path
+    path = args.o
 
     # Generate and output code
     generate = generators[command]

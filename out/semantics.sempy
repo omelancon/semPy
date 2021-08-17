@@ -1,0 +1,59 @@
+default_types = ["sint", "bint", "bool", "float", "str"]
+default_binary_types = (default_types, default_types)
+
+def defaults_except(*exceptions):
+    return [t for t in default_types if t not in exceptions]
+
+add_specializations("add", types=default_binary_types)
+add_specializations("bitand", types=default_binary_types)
+add_specializations("bitor", types=default_binary_types)
+add_specializations("floordiv", types=default_binary_types)
+add_specializations("lshift", types=default_binary_types)
+add_specializations("matmul", types=default_binary_types)
+add_specializations("mod", types=[defaults_except("str"), default_types])
+add_specializations("mul", types=default_binary_types)
+add_specializations("pow", types=default_binary_types)
+add_specializations("rshift", types=default_binary_types)
+add_specializations("sub", types=default_binary_types)
+add_specializations("truediv", types=default_binary_types)
+add_specializations("xor", types=default_binary_types)
+
+# Inplace semantics
+add_specializations("iadd", types=default_binary_types)
+add_specializations("ibitand", types=default_binary_types)
+add_specializations("ibitor", types=default_binary_types)
+add_specializations("ifloordiv", types=default_binary_types)
+add_specializations("ilshift", types=default_binary_types)
+add_specializations("imatmul", types=default_binary_types)
+add_specializations("imod", types=[defaults_except("str"), default_types])
+add_specializations("imul", types=default_binary_types)
+add_specializations("ipow", types=default_binary_types)
+add_specializations("irshift", types=default_binary_types)
+add_specializations("isub", types=default_binary_types)
+add_specializations("itruediv", types=default_binary_types)
+add_specializations("ixor", types=default_binary_types)
+
+# Comparison semantics
+add_specializations("ge", types=default_binary_types)
+add_specializations("gt", types=default_binary_types)
+add_specializations("le", types=default_binary_types)
+add_specializations("lt", types=default_binary_types)
+add_specializations("eq", types=default_binary_types)
+add_specializations("ne", types=default_binary_types)
+
+add_specializations("ge", types=default_binary_types, as_test=True)
+add_specializations("gt", types=default_binary_types, as_test=True)
+add_specializations("le", types=default_binary_types, as_test=True)
+add_specializations("lt", types=default_binary_types, as_test=True)
+add_specializations("eq", types=default_binary_types, as_test=True)
+add_specializations("ne", types=default_binary_types, as_test=True)
+
+# Unary semantics
+add_specializations("pos", types=[default_types])
+add_specializations("neg", types=[default_types])
+add_specializations("invert", types=[default_types])
+add_specializations("truth", types=[default_types])
+add_specializations("test", types=[default_types])
+
+# Other
+add_specializations("descriptor_get", types=["function", "unknown", "unknown"])
