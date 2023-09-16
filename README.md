@@ -1,4 +1,4 @@
-A tool to analyze Python's semantics and generate fast-path for frequently used operators and type combinations.
+A tool to analyze Python's semantics and generate fast paths for frequently used operators and type combinations.
 
 # Summary
 In 2018, our team at Université de Montréal began researching optimizing compilers for Python. We quickly realized that one of the major obstacles to writing an optimizing Python compiler stems from its complex semantics. During our first year, we primarily focused on _getting the semantics right_, leaving little room for actual optimization.
