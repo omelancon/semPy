@@ -11,7 +11,7 @@ Moreover, having an executable semantics enables us to apply static analysis wit
 
 `semPy` generates _behaviors_, which are functions that represent fast paths for executing an operation for a given combination of types. We used semPy in our prototype Python compiler, Zipi, which in some cases outperformed even PyPy.
 
-For more details, read the full paper: [MelanconFeeleySerranoSLE23](http://www.iro.umontreal.ca/~feeley/papers/MelanconFeeleySerranoSLE23.pdf)
+For more details, read the full paper: [An Executable Semantics for Faster Development of Optimizing Python Compilers](http://www.iro.umontreal.ca/~feeley/papers/MelanconFeeleySerranoSLE23.pdf)
 
 # Usage
 
