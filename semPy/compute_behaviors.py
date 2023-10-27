@@ -217,6 +217,9 @@ class NameCounter(PPYNodeVisitor):
     def visit_PPYIntrinsic(self, node):
         return node
 
+    def visit_PPYSingleton(self, node):
+        return node
+
 
 class DuplicateBranchingRemover(ast.NodeTransformer):
     # TODO this case is tricky...
@@ -248,6 +251,50 @@ class DuplicateBranchingRemover(ast.NodeTransformer):
             return node
 
 
+class DeadCodeRemover(ast.NodeTransformer):
+    def __init__(self, node):
+        self.node = node
+        self._memo = set()
+
+    def apply(self):
+        return self.visit(self.node)
+
+    def is_dead_end(self, stmt):
+        if isinstance(stmt, ast.Return) or isinstance(stmt, ast.Raise):
+            return True
+        elif stmt in self._memo:
+            return True
+        elif isinstance(stmt, ast.If):
+            if any(map(self.is_dead_end, stmt.body)) and any(map(self.is_dead_end, stmt.orelse)):
+                self._memo.add(stmt)
+                return True
+        else:
+            return False
+
+    def remove_body_dead_code(self, body):
+        new_body = []
+        for stmt in body:
+            new_body.append(stmt)
+            if self.is_dead_end(stmt):
+                break
+        body[:] = new_body
+
+    def remove_stmt_dead_code(self, node, fields=('body',)):
+        for field in fields:
+            self.remove_body_dead_code(getattr(node, field))
+
+    def visit_FunctionDef(self, node):
+        node = self.generic_visit(node)
+        self.remove_stmt_dead_code(node)
+        return node
+    
+    def visit_If(self, node):
+        node = self.generic_visit(node)
+        self.remove_stmt_dead_code(node, fields=('body', 'orelse'))
+        return node
+
+
+
 class AssignmentRemover(PPYNodeTransformer):
     def __init__(self, fn_or_body):
         self.fn_or_body = fn_or_body
@@ -266,23 +313,24 @@ class AssignmentRemover(PPYNodeTransformer):
 
             # assignments which can be fully removed as they were inlined
             to_remove = self.to_remove
-
             for name, values in self.assignments.items():
                 if ref_counter[name] == 0 and len(values) == 1:
                     to_remove.add(name)
 
             # assignments which can be inlined as the variable is single use
-            to_inline = self.to_inline
             for name, count in ref_counter.items():
                 if count == 1:
                     name_assignments = assignments[name]
                     if len(name_assignments) == 1:
-                        to_inline[name] = name_assignments[0].value
+                        self.to_inline[name] = name_assignments[0].value
 
             new_body = [self.visit(s) for s in body]
             body[:] = [s for s in new_body if s is not None]
 
     def visit_Assign(self, node):
+        if node.value is ppy_NotImplemented:
+            return None # We know that semantically, all assignment to NotImplemented can be removed
+
         targets = node.targets
         new_targets = [t for t in targets if not isinstance(t, ast.Name) or t.id not in self.to_remove]
 
@@ -317,6 +365,9 @@ class AssignmentRemover(PPYNodeTransformer):
             res_orelse.append(ast.Pass())
 
         return res
+
+    def visit_PPYSingleton(self, node):
+        return node
 
     def visit_PPYValue(self, node):
         return node
@@ -359,6 +410,9 @@ class PPYValuesReplacer(PPYNodeTransformer):
 
     def visit_PPYClass(self, node):
         return ast.Name(node.name, ast.Load())
+
+    def visit_PPYSingleton(self, node):
+        raise NotImplementedError # that should not happen unless we add singletons other than NotImplemented!
 
     def visit_Return(self, node):
         value = node.value
@@ -770,6 +824,7 @@ ppy_intrinsic_absent = PPYIntrinsic("absent")
 ppy_intrinsic_sint = PPYIntrinsic("sint")
 ppy_intrinsic_bint = PPYIntrinsic("bint")
 ppy_intrinsic_class_getattr = PPYIntrinsic("class_getattr")
+ppy_intrinsic_mro_lookup = PPYIntrinsic("mro_lookup")
 ppy_intrinsic_define_semantics = PPYIntrinsic("define_semantics")
 ppy_intrinsic_builtin = PPYIntrinsic("builtin")
 ppy_intrinsic_private = PPYIntrinsic("private")
@@ -906,6 +961,8 @@ def simplify_intrinsic_call(fn, args, keywords, rte):
 def partial_eval_intrinsic_call(fn, args, keywords, rte, return_kind=ReturnKind.as_return()):
     if fn is ppy_intrinsic_class_getattr:
         yield return_kind.do_return(intrinsic_eval_class_getattr_call(args, rte))
+    elif fn is ppy_intrinsic_mro_lookup:
+        yield return_kind.do_return(intrinsic_eval_mro_lookup_call(args, rte))
     elif isinstance(fn, PPYIntrinsic):
         # Cannot evaluate but can simplify
         value = simplify_intrinsic_call(fn, args, keywords, rte)
@@ -925,26 +982,38 @@ def intrinsic_eval_class_getattr_call(args, rte):
 
     if isinstance(obj, PPYValue):
         if isinstance(attr, ast.Constant) and isinstance(attr.value, str):
-            type_ = rte.modules["builtins"]["int"] if obj.type in (ppy_intrinsic_sint, ppy_intrinsic_bint) else obj.type
+            type_ = obj.type
 
             if type_ is None:
                 raise NotImplementedError(f"partial_eval_class_getattr_call: could not resolve type")
-            else:
-                attr_name = attr.value
 
-                for ppy_class in type_.mro:
-                    attr = ppy_class.get(attr_name)
-
-                    if attr is not None:
-                        return attr
-
-                return ppy_intrinsic_absent
-        else:
-            raise ValueError("partial_eval_class_getattr_call: second argument must be a string literal")
+            return intrinsic_eval_mro_lookup_call([type_, attr], rte)
     else:
         raise NotImplementedError(
             "partial_eval_class_getattr_call: first argument must have been resolved to a ppy object")
 
+
+def intrinsic_eval_mro_lookup_call(args, rte):
+    type_ = args[0]
+    attr = args[1]
+
+    type_ = rte.modules["builtins"]["int"] if type_ in (ppy_intrinsic_sint, ppy_intrinsic_bint) else type_
+
+    if not isinstance(type_, PPYClass):
+        raise TypeError('intrinsic_eval_mro_lookup_call: first argument is not a type')
+
+    if not isinstance(attr, ast.Constant) or not isinstance(attr.value, str):
+        raise TypeError("intrinsic_eval_mro_lookup_call: second argument must be a string literal")
+
+    attr_name = attr.value
+
+    for ppy_class in type_.mro:
+        attr = ppy_class.get(attr_name)
+
+        if attr is not None:
+            return attr
+
+    return ppy_intrinsic_absent
 
 # End of intrinsic calls
 
@@ -1022,10 +1091,10 @@ def builtin_eval_issubclass_call(args, rte):
 
 def partial_eval_stmts(stmts, rte):
     for stmt in stmts:
-        yield from partial_eval_stmt(stmt, rte)
-
-        if isinstance(stmt, ast.Return) or isinstance(stmt, ast.Raise):
-            break
+        for evaluated_stmt in partial_eval_stmt(stmt, rte):
+            yield evaluated_stmt
+            if isinstance(evaluated_stmt, ast.Return) or isinstance(evaluated_stmt, ast.Raise):
+                break
 
 
 def partial_eval_stmt(stmt, rte):
@@ -1576,6 +1645,9 @@ def partial_eval_is(left, right, rte):
         if isinstance(left.origin, ast.Constant) and isinstance(right.origin, ast.Constant):
             return ast.Constant(left.value.value is right.value.value)
 
+    if isinstance(left, PPYFunction) and isinstance(right, PPYFunction):
+        return ast.Constant(left.origin is right.origin)
+
     # Unresolved
     return None
 
@@ -1755,6 +1827,7 @@ def compute_single_behavior(behavior_name, module_name, callee_name, types, as_t
     remove_extra_pass(behavior)
     AssignmentRemover(behavior).apply()
     DuplicateBranchingRemover(behavior).apply()
+    DeadCodeRemover(behavior).apply()
     PPYValuesReplacer(behavior).apply()
 
     if as_test:
