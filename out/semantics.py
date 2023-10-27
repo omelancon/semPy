@@ -4,352 +4,521 @@ from __compiler_intrinsics__ import define_semantics, class_getattr, py_bool_to_
 @define_semantics
 def add(x, y):
     def normal():
-        magic_method = class_getattr(x, "__add__")
-        if magic_method is absent:
-            return reflected()
+        if x_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(x, y)
-            if result is NotImplemented:
-                return reflected()
-            else:
-                return result
+            return x_method(x, y)
 
     def reflected():
-        magic_method = class_getattr(y, "__radd__")
-        if magic_method is absent:
-            return raise_binary_TypeError("+", x, y)
+        if y_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(y, x)
+            return y_method(y, x)
+
+    x_type = type(x)
+    y_type = type(y)
+
+    x_method = class_getattr(x, "__add__")
+    y_method = class_getattr(y, "__radd__")
+
+    if x_type is y_type:
+        result = normal()
+        if result is NotImplemented:
+            return raise_binary_TypeError("+", x, y)
+    elif issubclass(x_type, y_type) and x_method is not y_method:
+        result = reflected()
+        if result is NotImplemented:
+            result = normal()
             if result is NotImplemented:
                 return raise_binary_TypeError("+", x, y)
-            else:
-                return result
+    else:
+        result = normal()
+        if result is NotImplemented:
+            result = reflected()
+            if result is NotImplemented:
+                return raise_binary_TypeError("+", x, y)
 
-    return normal()
+    return result
 
 # Auto-generated
 @define_semantics
 def bitand(x, y):
     def normal():
-        magic_method = class_getattr(x, "__and__")
-        if magic_method is absent:
-            return reflected()
+        if x_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(x, y)
-            if result is NotImplemented:
-                return reflected()
-            else:
-                return result
+            return x_method(x, y)
 
     def reflected():
-        magic_method = class_getattr(y, "__rand__")
-        if magic_method is absent:
-            return raise_binary_TypeError("&", x, y)
+        if y_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(y, x)
+            return y_method(y, x)
+
+    x_type = type(x)
+    y_type = type(y)
+
+    x_method = class_getattr(x, "__and__")
+    y_method = class_getattr(y, "__rand__")
+
+    if x_type is y_type:
+        result = normal()
+        if result is NotImplemented:
+            return raise_binary_TypeError("&", x, y)
+    elif issubclass(x_type, y_type) and x_method is not y_method:
+        result = reflected()
+        if result is NotImplemented:
+            result = normal()
             if result is NotImplemented:
                 return raise_binary_TypeError("&", x, y)
-            else:
-                return result
+    else:
+        result = normal()
+        if result is NotImplemented:
+            result = reflected()
+            if result is NotImplemented:
+                return raise_binary_TypeError("&", x, y)
 
-    return normal()
+    return result
 
 # Auto-generated
 @define_semantics
 def bitor(x, y):
     def normal():
-        magic_method = class_getattr(x, "__or__")
-        if magic_method is absent:
-            return reflected()
+        if x_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(x, y)
-            if result is NotImplemented:
-                return reflected()
-            else:
-                return result
+            return x_method(x, y)
 
     def reflected():
-        magic_method = class_getattr(y, "__ror__")
-        if magic_method is absent:
-            return raise_binary_TypeError("|", x, y)
+        if y_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(y, x)
+            return y_method(y, x)
+
+    x_type = type(x)
+    y_type = type(y)
+
+    x_method = class_getattr(x, "__or__")
+    y_method = class_getattr(y, "__ror__")
+
+    if x_type is y_type:
+        result = normal()
+        if result is NotImplemented:
+            return raise_binary_TypeError("|", x, y)
+    elif issubclass(x_type, y_type) and x_method is not y_method:
+        result = reflected()
+        if result is NotImplemented:
+            result = normal()
             if result is NotImplemented:
                 return raise_binary_TypeError("|", x, y)
-            else:
-                return result
+    else:
+        result = normal()
+        if result is NotImplemented:
+            result = reflected()
+            if result is NotImplemented:
+                return raise_binary_TypeError("|", x, y)
 
-    return normal()
+    return result
 
 # Auto-generated
 @define_semantics
 def floordiv(x, y):
     def normal():
-        magic_method = class_getattr(x, "__floordiv__")
-        if magic_method is absent:
-            return reflected()
+        if x_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(x, y)
-            if result is NotImplemented:
-                return reflected()
-            else:
-                return result
+            return x_method(x, y)
 
     def reflected():
-        magic_method = class_getattr(y, "__rfloordiv__")
-        if magic_method is absent:
-            return raise_binary_TypeError("//", x, y)
+        if y_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(y, x)
+            return y_method(y, x)
+
+    x_type = type(x)
+    y_type = type(y)
+
+    x_method = class_getattr(x, "__floordiv__")
+    y_method = class_getattr(y, "__rfloordiv__")
+
+    if x_type is y_type:
+        result = normal()
+        if result is NotImplemented:
+            return raise_binary_TypeError("//", x, y)
+    elif issubclass(x_type, y_type) and x_method is not y_method:
+        result = reflected()
+        if result is NotImplemented:
+            result = normal()
             if result is NotImplemented:
                 return raise_binary_TypeError("//", x, y)
-            else:
-                return result
+    else:
+        result = normal()
+        if result is NotImplemented:
+            result = reflected()
+            if result is NotImplemented:
+                return raise_binary_TypeError("//", x, y)
 
-    return normal()
+    return result
 
 # Auto-generated
 @define_semantics
 def lshift(x, y):
     def normal():
-        magic_method = class_getattr(x, "__lshift__")
-        if magic_method is absent:
-            return reflected()
+        if x_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(x, y)
-            if result is NotImplemented:
-                return reflected()
-            else:
-                return result
+            return x_method(x, y)
 
     def reflected():
-        magic_method = class_getattr(y, "__rlshift__")
-        if magic_method is absent:
-            return raise_binary_TypeError("<<", x, y)
+        if y_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(y, x)
+            return y_method(y, x)
+
+    x_type = type(x)
+    y_type = type(y)
+
+    x_method = class_getattr(x, "__lshift__")
+    y_method = class_getattr(y, "__rlshift__")
+
+    if x_type is y_type:
+        result = normal()
+        if result is NotImplemented:
+            return raise_binary_TypeError("<<", x, y)
+    elif issubclass(x_type, y_type) and x_method is not y_method:
+        result = reflected()
+        if result is NotImplemented:
+            result = normal()
             if result is NotImplemented:
                 return raise_binary_TypeError("<<", x, y)
-            else:
-                return result
+    else:
+        result = normal()
+        if result is NotImplemented:
+            result = reflected()
+            if result is NotImplemented:
+                return raise_binary_TypeError("<<", x, y)
 
-    return normal()
+    return result
 
 # Auto-generated
 @define_semantics
 def matmul(x, y):
     def normal():
-        magic_method = class_getattr(x, "__matmul__")
-        if magic_method is absent:
-            return reflected()
+        if x_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(x, y)
-            if result is NotImplemented:
-                return reflected()
-            else:
-                return result
+            return x_method(x, y)
 
     def reflected():
-        magic_method = class_getattr(y, "__rmatmul__")
-        if magic_method is absent:
-            return raise_binary_TypeError("@", x, y)
+        if y_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(y, x)
+            return y_method(y, x)
+
+    x_type = type(x)
+    y_type = type(y)
+
+    x_method = class_getattr(x, "__matmul__")
+    y_method = class_getattr(y, "__rmatmul__")
+
+    if x_type is y_type:
+        result = normal()
+        if result is NotImplemented:
+            return raise_binary_TypeError("@", x, y)
+    elif issubclass(x_type, y_type) and x_method is not y_method:
+        result = reflected()
+        if result is NotImplemented:
+            result = normal()
             if result is NotImplemented:
                 return raise_binary_TypeError("@", x, y)
-            else:
-                return result
+    else:
+        result = normal()
+        if result is NotImplemented:
+            result = reflected()
+            if result is NotImplemented:
+                return raise_binary_TypeError("@", x, y)
 
-    return normal()
+    return result
 
 # Auto-generated
 @define_semantics
 def mod(x, y):
     def normal():
-        magic_method = class_getattr(x, "__mod__")
-        if magic_method is absent:
-            return reflected()
+        if x_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(x, y)
-            if result is NotImplemented:
-                return reflected()
-            else:
-                return result
+            return x_method(x, y)
 
     def reflected():
-        magic_method = class_getattr(y, "__rmod__")
-        if magic_method is absent:
-            return raise_binary_TypeError("%", x, y)
+        if y_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(y, x)
+            return y_method(y, x)
+
+    x_type = type(x)
+    y_type = type(y)
+
+    x_method = class_getattr(x, "__mod__")
+    y_method = class_getattr(y, "__rmod__")
+
+    if x_type is y_type:
+        result = normal()
+        if result is NotImplemented:
+            return raise_binary_TypeError("%", x, y)
+    elif issubclass(x_type, y_type) and x_method is not y_method:
+        result = reflected()
+        if result is NotImplemented:
+            result = normal()
             if result is NotImplemented:
                 return raise_binary_TypeError("%", x, y)
-            else:
-                return result
+    else:
+        result = normal()
+        if result is NotImplemented:
+            result = reflected()
+            if result is NotImplemented:
+                return raise_binary_TypeError("%", x, y)
 
-    return normal()
+    return result
 
 # Auto-generated
 @define_semantics
 def mul(x, y):
     def normal():
-        magic_method = class_getattr(x, "__mul__")
-        if magic_method is absent:
-            return reflected()
+        if x_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(x, y)
-            if result is NotImplemented:
-                return reflected()
-            else:
-                return result
+            return x_method(x, y)
 
     def reflected():
-        magic_method = class_getattr(y, "__rmul__")
-        if magic_method is absent:
-            return raise_binary_TypeError("*", x, y)
+        if y_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(y, x)
+            return y_method(y, x)
+
+    x_type = type(x)
+    y_type = type(y)
+
+    x_method = class_getattr(x, "__mul__")
+    y_method = class_getattr(y, "__rmul__")
+
+    if x_type is y_type:
+        result = normal()
+        if result is NotImplemented:
+            return raise_binary_TypeError("*", x, y)
+    elif issubclass(x_type, y_type) and x_method is not y_method:
+        result = reflected()
+        if result is NotImplemented:
+            result = normal()
             if result is NotImplemented:
                 return raise_binary_TypeError("*", x, y)
-            else:
-                return result
+    else:
+        result = normal()
+        if result is NotImplemented:
+            result = reflected()
+            if result is NotImplemented:
+                return raise_binary_TypeError("*", x, y)
 
-    return normal()
+    return result
 
 # Auto-generated
 @define_semantics
 def pow(x, y):
     def normal():
-        magic_method = class_getattr(x, "__pow__")
-        if magic_method is absent:
-            return reflected()
+        if x_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(x, y)
-            if result is NotImplemented:
-                return reflected()
-            else:
-                return result
+            return x_method(x, y)
 
     def reflected():
-        magic_method = class_getattr(y, "__rpow__")
-        if magic_method is absent:
-            return raise_binary_TypeError("**", x, y)
+        if y_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(y, x)
+            return y_method(y, x)
+
+    x_type = type(x)
+    y_type = type(y)
+
+    x_method = class_getattr(x, "__pow__")
+    y_method = class_getattr(y, "__rpow__")
+
+    if x_type is y_type:
+        result = normal()
+        if result is NotImplemented:
+            return raise_binary_TypeError("**", x, y)
+    elif issubclass(x_type, y_type) and x_method is not y_method:
+        result = reflected()
+        if result is NotImplemented:
+            result = normal()
             if result is NotImplemented:
                 return raise_binary_TypeError("**", x, y)
-            else:
-                return result
+    else:
+        result = normal()
+        if result is NotImplemented:
+            result = reflected()
+            if result is NotImplemented:
+                return raise_binary_TypeError("**", x, y)
 
-    return normal()
+    return result
 
 # Auto-generated
 @define_semantics
 def rshift(x, y):
     def normal():
-        magic_method = class_getattr(x, "__rshift__")
-        if magic_method is absent:
-            return reflected()
+        if x_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(x, y)
-            if result is NotImplemented:
-                return reflected()
-            else:
-                return result
+            return x_method(x, y)
 
     def reflected():
-        magic_method = class_getattr(y, "__rrshift__")
-        if magic_method is absent:
-            return raise_binary_TypeError(">>", x, y)
+        if y_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(y, x)
+            return y_method(y, x)
+
+    x_type = type(x)
+    y_type = type(y)
+
+    x_method = class_getattr(x, "__rshift__")
+    y_method = class_getattr(y, "__rrshift__")
+
+    if x_type is y_type:
+        result = normal()
+        if result is NotImplemented:
+            return raise_binary_TypeError(">>", x, y)
+    elif issubclass(x_type, y_type) and x_method is not y_method:
+        result = reflected()
+        if result is NotImplemented:
+            result = normal()
             if result is NotImplemented:
                 return raise_binary_TypeError(">>", x, y)
-            else:
-                return result
+    else:
+        result = normal()
+        if result is NotImplemented:
+            result = reflected()
+            if result is NotImplemented:
+                return raise_binary_TypeError(">>", x, y)
 
-    return normal()
+    return result
 
 # Auto-generated
 @define_semantics
 def sub(x, y):
     def normal():
-        magic_method = class_getattr(x, "__sub__")
-        if magic_method is absent:
-            return reflected()
+        if x_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(x, y)
-            if result is NotImplemented:
-                return reflected()
-            else:
-                return result
+            return x_method(x, y)
 
     def reflected():
-        magic_method = class_getattr(y, "__rsub__")
-        if magic_method is absent:
-            return raise_binary_TypeError("-", x, y)
+        if y_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(y, x)
+            return y_method(y, x)
+
+    x_type = type(x)
+    y_type = type(y)
+
+    x_method = class_getattr(x, "__sub__")
+    y_method = class_getattr(y, "__rsub__")
+
+    if x_type is y_type:
+        result = normal()
+        if result is NotImplemented:
+            return raise_binary_TypeError("-", x, y)
+    elif issubclass(x_type, y_type) and x_method is not y_method:
+        result = reflected()
+        if result is NotImplemented:
+            result = normal()
             if result is NotImplemented:
                 return raise_binary_TypeError("-", x, y)
-            else:
-                return result
+    else:
+        result = normal()
+        if result is NotImplemented:
+            result = reflected()
+            if result is NotImplemented:
+                return raise_binary_TypeError("-", x, y)
 
-    return normal()
+    return result
 
 # Auto-generated
 @define_semantics
 def truediv(x, y):
     def normal():
-        magic_method = class_getattr(x, "__truediv__")
-        if magic_method is absent:
-            return reflected()
+        if x_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(x, y)
-            if result is NotImplemented:
-                return reflected()
-            else:
-                return result
+            return x_method(x, y)
 
     def reflected():
-        magic_method = class_getattr(y, "__rtruediv__")
-        if magic_method is absent:
-            return raise_binary_TypeError("/", x, y)
+        if y_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(y, x)
+            return y_method(y, x)
+
+    x_type = type(x)
+    y_type = type(y)
+
+    x_method = class_getattr(x, "__truediv__")
+    y_method = class_getattr(y, "__rtruediv__")
+
+    if x_type is y_type:
+        result = normal()
+        if result is NotImplemented:
+            return raise_binary_TypeError("/", x, y)
+    elif issubclass(x_type, y_type) and x_method is not y_method:
+        result = reflected()
+        if result is NotImplemented:
+            result = normal()
             if result is NotImplemented:
                 return raise_binary_TypeError("/", x, y)
-            else:
-                return result
+    else:
+        result = normal()
+        if result is NotImplemented:
+            result = reflected()
+            if result is NotImplemented:
+                return raise_binary_TypeError("/", x, y)
 
-    return normal()
+    return result
 
 # Auto-generated
 @define_semantics
 def xor(x, y):
     def normal():
-        magic_method = class_getattr(x, "__xor__")
-        if magic_method is absent:
-            return reflected()
+        if x_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(x, y)
-            if result is NotImplemented:
-                return reflected()
-            else:
-                return result
+            return x_method(x, y)
 
     def reflected():
-        magic_method = class_getattr(y, "__rxor__")
-        if magic_method is absent:
-            return raise_binary_TypeError("^", x, y)
+        if y_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(y, x)
+            return y_method(y, x)
+
+    x_type = type(x)
+    y_type = type(y)
+
+    x_method = class_getattr(x, "__xor__")
+    y_method = class_getattr(y, "__rxor__")
+
+    if x_type is y_type:
+        result = normal()
+        if result is NotImplemented:
+            return raise_binary_TypeError("^", x, y)
+    elif issubclass(x_type, y_type) and x_method is not y_method:
+        result = reflected()
+        if result is NotImplemented:
+            result = normal()
             if result is NotImplemented:
                 return raise_binary_TypeError("^", x, y)
-            else:
-                return result
+    else:
+        result = normal()
+        if result is NotImplemented:
+            result = reflected()
+            if result is NotImplemented:
+                return raise_binary_TypeError("^", x, y)
 
-    return normal()
+    return result
 
 # Auto-generated
 @define_semantics

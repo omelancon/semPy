@@ -332,7 +332,7 @@ class int:
         if isinstance(self, int):
             if isinstance(other, int):
                 if py_int_to_host(self) >= py_int_to_host(0):
-                    return py_int_from_host(py_int_to_host(self) << py_int_to_host(other))
+                    return py_int_from_host(py_int_to_host(other) << py_int_to_host(self))
                 else:
                     raise ValueError("negative shift count")
             else:
@@ -368,7 +368,7 @@ class int:
         if isinstance(self, int):
             if isinstance(other, int):
                 if py_int_to_host(self) >= py_int_to_host(0):
-                    return py_int_from_host(py_int_to_host(self) >> py_int_to_host(other))
+                    return py_int_from_host(py_int_to_host(other) >> py_int_to_host(self))
                 else:
                     raise ValueError("negative shift count")
             else:

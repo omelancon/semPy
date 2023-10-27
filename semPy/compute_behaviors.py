@@ -1630,6 +1630,9 @@ def partial_eval_is(left, right, rte):
         if isinstance(left.origin, ast.Constant) and isinstance(right.origin, ast.Constant):
             return ast.Constant(left.value.value is right.value.value)
 
+    if isinstance(left, PPYFunction) and isinstance(right, PPYFunction):
+        return ast.Constant(left.origin is right.origin)
+
     # Unresolved
     return None
 

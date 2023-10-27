@@ -256,28 +256,41 @@ arithmetic_template = \
 @define_semantics
 def {op}(x, y):
     def normal():
-        magic_method = class_getattr(x, "__{magic_method}__")
-        if magic_method is absent:
-            return reflected()
+        if x_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(x, y)
-            if result is NotImplemented:
-                return reflected()
-            else:
-                return result
+            return x_method(x, y)
 
     def reflected():
-        magic_method = class_getattr(y, "__r{magic_method}__")
-        if magic_method is absent:
-            return raise_binary_TypeError("{symbol}", x, y)
+        if y_method is absent:
+            return NotImplemented
         else:
-            result = magic_method(y, x)
+            return y_method(y, x)
+
+    x_type = type(x)
+    y_type = type(y)
+
+    x_method = class_getattr(x, "__{magic_method}__")
+    y_method = class_getattr(y, "__r{magic_method}__")
+
+    if x_type is y_type:
+        result = normal()
+        if result is NotImplemented:
+            return raise_binary_TypeError("{symbol}", x, y)
+    elif issubclass(x_type, y_type) and x_method is not y_method:
+        result = reflected()
+        if result is NotImplemented:
+            result = normal()
             if result is NotImplemented:
                 return raise_binary_TypeError("{symbol}", x, y)
-            else:
-                return result
+    else:
+        result = normal()
+        if result is NotImplemented:
+            result = reflected()
+            if result is NotImplemented:
+                return raise_binary_TypeError("{symbol}", x, y)
 
-    return normal()"""
+    return result"""
 
 arithmetic_info = {'add': {"op": "add", "magic_method": "add", "symbol": "+"},
                    'bitand': {"op": "bitand", "magic_method": "and", "symbol": "&"},
@@ -500,7 +513,7 @@ int_reflected_shift_method_template = \
         if isinstance(self, int):
             if isinstance(other, int):
                 if py_int_to_host(self) >= py_int_to_host(0):
-                    return py_int_from_host(py_int_to_host(self) {op} py_int_to_host(other))
+                    return py_int_from_host(py_int_to_host(other) {op} py_int_to_host(self))
                 else:
                     raise ValueError("negative shift count")
             else:
