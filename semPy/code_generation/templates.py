@@ -5,7 +5,7 @@
 # ======================================================================================================================
 
 semantics_template = \
-    """from __compiler_intrinsics__ import define_semantics, class_getattr, py_bool_to_host_bool, absent, sint, bint
+    """from __compiler_intrinsics__ import define_semantics, class_getattr, mro_lookup, py_bool_to_host_bool, absent, sint, bint
 
 {arithmetic}
 
@@ -270,8 +270,8 @@ def {op}(x, y):
     x_type = type(x)
     y_type = type(y)
 
-    x_method = class_getattr(x, "__{magic_method}__")
-    y_method = class_getattr(y, "__r{magic_method}__")
+    x_method = mro_lookup(x_type, "__{magic_method}__")
+    y_method = mro_lookup(y_type, "__r{magic_method}__")
 
     if x_type is y_type:
         result = normal()

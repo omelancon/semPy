@@ -1,4 +1,4 @@
-from __compiler_intrinsics__ import define_semantics, class_getattr, py_bool_to_host_bool, absent, sint, bint
+from __compiler_intrinsics__ import define_semantics, class_getattr, mro_lookup, py_bool_to_host_bool, absent, sint, bint
 
 # Auto-generated
 @define_semantics
@@ -18,8 +18,8 @@ def add(x, y):
     x_type = type(x)
     y_type = type(y)
 
-    x_method = class_getattr(x, "__add__")
-    y_method = class_getattr(y, "__radd__")
+    x_method = mro_lookup(x_type, "__add__")
+    y_method = mro_lookup(y_type, "__radd__")
 
     if x_type is y_type:
         result = normal()
@@ -58,8 +58,8 @@ def bitand(x, y):
     x_type = type(x)
     y_type = type(y)
 
-    x_method = class_getattr(x, "__and__")
-    y_method = class_getattr(y, "__rand__")
+    x_method = mro_lookup(x_type, "__and__")
+    y_method = mro_lookup(y_type, "__rand__")
 
     if x_type is y_type:
         result = normal()
@@ -98,8 +98,8 @@ def bitor(x, y):
     x_type = type(x)
     y_type = type(y)
 
-    x_method = class_getattr(x, "__or__")
-    y_method = class_getattr(y, "__ror__")
+    x_method = mro_lookup(x_type, "__or__")
+    y_method = mro_lookup(y_type, "__ror__")
 
     if x_type is y_type:
         result = normal()
@@ -138,8 +138,8 @@ def floordiv(x, y):
     x_type = type(x)
     y_type = type(y)
 
-    x_method = class_getattr(x, "__floordiv__")
-    y_method = class_getattr(y, "__rfloordiv__")
+    x_method = mro_lookup(x_type, "__floordiv__")
+    y_method = mro_lookup(y_type, "__rfloordiv__")
 
     if x_type is y_type:
         result = normal()
@@ -178,8 +178,8 @@ def lshift(x, y):
     x_type = type(x)
     y_type = type(y)
 
-    x_method = class_getattr(x, "__lshift__")
-    y_method = class_getattr(y, "__rlshift__")
+    x_method = mro_lookup(x_type, "__lshift__")
+    y_method = mro_lookup(y_type, "__rlshift__")
 
     if x_type is y_type:
         result = normal()
@@ -218,8 +218,8 @@ def matmul(x, y):
     x_type = type(x)
     y_type = type(y)
 
-    x_method = class_getattr(x, "__matmul__")
-    y_method = class_getattr(y, "__rmatmul__")
+    x_method = mro_lookup(x_type, "__matmul__")
+    y_method = mro_lookup(y_type, "__rmatmul__")
 
     if x_type is y_type:
         result = normal()
@@ -258,8 +258,8 @@ def mod(x, y):
     x_type = type(x)
     y_type = type(y)
 
-    x_method = class_getattr(x, "__mod__")
-    y_method = class_getattr(y, "__rmod__")
+    x_method = mro_lookup(x_type, "__mod__")
+    y_method = mro_lookup(y_type, "__rmod__")
 
     if x_type is y_type:
         result = normal()
@@ -298,8 +298,8 @@ def mul(x, y):
     x_type = type(x)
     y_type = type(y)
 
-    x_method = class_getattr(x, "__mul__")
-    y_method = class_getattr(y, "__rmul__")
+    x_method = mro_lookup(x_type, "__mul__")
+    y_method = mro_lookup(y_type, "__rmul__")
 
     if x_type is y_type:
         result = normal()
@@ -338,8 +338,8 @@ def pow(x, y):
     x_type = type(x)
     y_type = type(y)
 
-    x_method = class_getattr(x, "__pow__")
-    y_method = class_getattr(y, "__rpow__")
+    x_method = mro_lookup(x_type, "__pow__")
+    y_method = mro_lookup(y_type, "__rpow__")
 
     if x_type is y_type:
         result = normal()
@@ -378,8 +378,8 @@ def rshift(x, y):
     x_type = type(x)
     y_type = type(y)
 
-    x_method = class_getattr(x, "__rshift__")
-    y_method = class_getattr(y, "__rrshift__")
+    x_method = mro_lookup(x_type, "__rshift__")
+    y_method = mro_lookup(y_type, "__rrshift__")
 
     if x_type is y_type:
         result = normal()
@@ -418,8 +418,8 @@ def sub(x, y):
     x_type = type(x)
     y_type = type(y)
 
-    x_method = class_getattr(x, "__sub__")
-    y_method = class_getattr(y, "__rsub__")
+    x_method = mro_lookup(x_type, "__sub__")
+    y_method = mro_lookup(y_type, "__rsub__")
 
     if x_type is y_type:
         result = normal()
@@ -458,8 +458,8 @@ def truediv(x, y):
     x_type = type(x)
     y_type = type(y)
 
-    x_method = class_getattr(x, "__truediv__")
-    y_method = class_getattr(y, "__rtruediv__")
+    x_method = mro_lookup(x_type, "__truediv__")
+    y_method = mro_lookup(y_type, "__rtruediv__")
 
     if x_type is y_type:
         result = normal()
@@ -498,8 +498,8 @@ def xor(x, y):
     x_type = type(x)
     y_type = type(y)
 
-    x_method = class_getattr(x, "__xor__")
-    y_method = class_getattr(y, "__rxor__")
+    x_method = mro_lookup(x_type, "__xor__")
+    y_method = mro_lookup(y_type, "__rxor__")
 
     if x_type is y_type:
         result = normal()
