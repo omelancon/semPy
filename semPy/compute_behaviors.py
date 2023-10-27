@@ -217,6 +217,9 @@ class NameCounter(PPYNodeVisitor):
     def visit_PPYIntrinsic(self, node):
         return node
 
+    def visit_PPYSingleton(self, node):
+        return node
+
 
 class DuplicateBranchingRemover(ast.NodeTransformer):
     # TODO this case is tricky...
@@ -248,6 +251,50 @@ class DuplicateBranchingRemover(ast.NodeTransformer):
             return node
 
 
+class DeadCodeRemover(ast.NodeTransformer):
+    def __init__(self, node):
+        self.node = node
+        self._memo = set()
+
+    def apply(self):
+        return self.visit(self.node)
+
+    def is_dead_end(self, stmt):
+        if isinstance(stmt, ast.Return) or isinstance(stmt, ast.Raise):
+            return True
+        elif stmt in self._memo:
+            return True
+        elif isinstance(stmt, ast.If):
+            if any(map(self.is_dead_end, stmt.body)) and any(map(self.is_dead_end, stmt.orelse)):
+                self._memo.add(stmt)
+                return True
+        else:
+            return False
+
+    def remove_body_dead_code(self, body):
+        new_body = []
+        for stmt in body:
+            new_body.append(stmt)
+            if self.is_dead_end(stmt):
+                break
+        body[:] = new_body
+
+    def remove_stmt_dead_code(self, node, fields=('body',)):
+        for field in fields:
+            self.remove_body_dead_code(getattr(node, field))
+
+    def visit_FunctionDef(self, node):
+        node = self.generic_visit(node)
+        self.remove_stmt_dead_code(node)
+        return node
+    
+    def visit_If(self, node):
+        node = self.generic_visit(node)
+        self.remove_stmt_dead_code(node, fields=('body', 'orelse'))
+        return node
+
+
+
 class AssignmentRemover(PPYNodeTransformer):
     def __init__(self, fn_or_body):
         self.fn_or_body = fn_or_body
@@ -266,23 +313,24 @@ class AssignmentRemover(PPYNodeTransformer):
 
             # assignments which can be fully removed as they were inlined
             to_remove = self.to_remove
-
             for name, values in self.assignments.items():
                 if ref_counter[name] == 0 and len(values) == 1:
                     to_remove.add(name)
 
             # assignments which can be inlined as the variable is single use
-            to_inline = self.to_inline
             for name, count in ref_counter.items():
                 if count == 1:
                     name_assignments = assignments[name]
                     if len(name_assignments) == 1:
-                        to_inline[name] = name_assignments[0].value
+                        self.to_inline[name] = name_assignments[0].value
 
             new_body = [self.visit(s) for s in body]
             body[:] = [s for s in new_body if s is not None]
 
     def visit_Assign(self, node):
+        if node.value is ppy_NotImplemented:
+            return None # We know that semantically, all assignment to NotImplemented can be removed
+
         targets = node.targets
         new_targets = [t for t in targets if not isinstance(t, ast.Name) or t.id not in self.to_remove]
 
@@ -317,6 +365,9 @@ class AssignmentRemover(PPYNodeTransformer):
             res_orelse.append(ast.Pass())
 
         return res
+
+    def visit_PPYSingleton(self, node):
+        return node
 
     def visit_PPYValue(self, node):
         return node
@@ -359,6 +410,9 @@ class PPYValuesReplacer(PPYNodeTransformer):
 
     def visit_PPYClass(self, node):
         return ast.Name(node.name, ast.Load())
+
+    def visit_PPYSingleton(self, node):
+        raise NotImplementedError # that should not happen unless we add singletons other than NotImplemented!
 
     def visit_Return(self, node):
         value = node.value
@@ -1022,10 +1076,10 @@ def builtin_eval_issubclass_call(args, rte):
 
 def partial_eval_stmts(stmts, rte):
     for stmt in stmts:
-        yield from partial_eval_stmt(stmt, rte)
-
-        if isinstance(stmt, ast.Return) or isinstance(stmt, ast.Raise):
-            break
+        for evaluated_stmt in partial_eval_stmt(stmt, rte):
+            yield evaluated_stmt
+            if isinstance(evaluated_stmt, ast.Return) or isinstance(evaluated_stmt, ast.Raise):
+                break
 
 
 def partial_eval_stmt(stmt, rte):
@@ -1755,6 +1809,7 @@ def compute_single_behavior(behavior_name, module_name, callee_name, types, as_t
     remove_extra_pass(behavior)
     AssignmentRemover(behavior).apply()
     DuplicateBranchingRemover(behavior).apply()
+    DeadCodeRemover(behavior).apply()
     PPYValuesReplacer(behavior).apply()
 
     if as_test:
